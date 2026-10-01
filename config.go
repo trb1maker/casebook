@@ -3,7 +3,7 @@ package casebook
 import "time"
 
 const (
-	defaultHost       = "https://api.casebook.ru"
+	defaultHost       = "https://api3.casebook.ru"
 	defaultMaxRetries = 3
 	defaultLimit      = 100
 	defaultTimeout    = 10 * time.Second
