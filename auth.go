@@ -3,8 +3,9 @@ package casebook
 import "net/http"
 
 const (
-	apiKeyHeader     = "apiKey"
-	apiVersionHeader = "version"
+	apiKeyHeader       = "apiKey"
+	apiVersionHeader   = "version"
+	defaultContentType = "application/json"
 )
 
 type authMiddleware struct {
@@ -16,6 +17,7 @@ type authMiddleware struct {
 func (m *authMiddleware) RoundTrip(r *http.Request) (*http.Response, error) {
 	r.Header.Set(apiKeyHeader, m.apiKey)
 	r.Header.Set(apiVersionHeader, m.apiVersion)
+	r.Header.Set("Content-Type", defaultContentType)
 	return m.next.RoundTrip(r) //nolint:wrapcheck // Client.Get wraps the error from Do.
 }
 
