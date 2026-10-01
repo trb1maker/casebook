@@ -35,8 +35,7 @@ func TestRetryStopsWhenContextCanceledDuringBackoff(t *testing.T) {
 	t.Cleanup(cancel)
 
 	c := NewClient("k", 1, WithHost(srv.URL), WithMaxRetries(3))
-	var out item
-	err := c.Get(ctx, "/cases", &out)
+	_, err := c.Get(ctx, "/cases")
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("error = %v", err)
 	}
@@ -110,12 +109,12 @@ func TestRetryEventuallySucceeds(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("k", 1, WithHost(srv.URL))
-	var out item
-	if err := c.Get(context.Background(), "/cases", &out); err != nil {
+	body, err := c.Get(context.Background(), "/cases")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Name != "ok" {
-		t.Fatalf("name = %q", out.Name)
+	if string(body) != `{"name":"ok"}` {
+		t.Fatalf("body = %s", body)
 	}
 	if hits.Load() != 3 {
 		t.Fatalf("hits = %d", hits.Load())
@@ -134,8 +133,7 @@ func TestRetrySkipsClientErrors(t *testing.T) {
 			t.Cleanup(srv.Close)
 
 			c := NewClient("k", 1, WithHost(srv.URL))
-			var out item
-			err := c.Get(context.Background(), "/cases", &out)
+			_, err := c.Get(context.Background(), "/cases")
 			var apiErr *APIError
 			if !errors.As(err, &apiErr) {
 				t.Fatalf("error = %v", err)
@@ -164,8 +162,7 @@ func TestRetryOnTooManyRequests(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("k", 1, WithHost(srv.URL))
-	var out item
-	if err := c.Get(context.Background(), "/cases", &out); err != nil {
+	if _, err := c.Get(context.Background(), "/cases"); err != nil {
 		t.Fatal(err)
 	}
 	if hits.Load() != 2 {
@@ -183,8 +180,7 @@ func TestRetryNonJSONServerError(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("k", 1, WithHost(srv.URL))
-	var out item
-	err := c.Get(context.Background(), "/cases", &out)
+	_, err := c.Get(context.Background(), "/cases")
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) {
 		t.Fatalf("error = %v", err)
@@ -207,8 +203,7 @@ func TestMaxRetriesBelowOne(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("k", 1, WithHost(srv.URL), WithMaxRetries(0))
-	var out item
-	err := c.Get(context.Background(), "/cases", &out)
+	_, err := c.Get(context.Background(), "/cases")
 	var apiErr *APIError
 	if !errors.As(err, &apiErr) {
 		t.Fatalf("error = %v", err)
@@ -234,8 +229,7 @@ func TestRetryTransportError(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("k", 1, WithHost(srv.URL), WithMaxRetries(3))
-	var out item
-	if err := c.Get(context.Background(), "/cases", &out); err == nil {
+	if _, err := c.Get(context.Background(), "/cases"); err == nil {
 		t.Fatal("expected transport error")
 	}
 	if hits.Load() != 1 {

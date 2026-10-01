@@ -2,8 +2,8 @@ package casebook
 
 import (
 	"context"
-	"encoding/json/v2"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -44,26 +44,27 @@ func NewClient(apiKey string, version int, opts ...Option) *Client {
 	}
 }
 
-func (c *Client) Get(ctx context.Context, path string, out any) error {
+func (c *Client) Get(ctx context.Context, path string) ([]byte, error) {
 	endpoint, err := url.JoinPath(c.host, path)
 	if err != nil {
-		return fmt.Errorf("request: %w", err)
+		return nil, fmt.Errorf("request: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
-		return fmt.Errorf("request: %w", err)
+		return nil, fmt.Errorf("request: %w", err)
 	}
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("get: %w", err)
+		return nil, fmt.Errorf("get: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if err := json.UnmarshalRead(resp.Body, out); err != nil {
-		return fmt.Errorf("unmarshal: %w", err)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read body: %w", err)
 	}
 
-	return nil
+	return body, nil
 }

@@ -40,8 +40,7 @@ func TestAuthHeadersOnConfiguredHost(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("secret", 2, WithHost(srv.URL))
-	var out item
-	if err := c.Get(context.Background(), "/cases", &out); err != nil {
+	if _, err := c.Get(context.Background(), "/cases"); err != nil {
 		t.Fatal(err)
 	}
 

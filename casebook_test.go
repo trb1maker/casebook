@@ -12,11 +12,7 @@ import (
 	"time"
 )
 
-type item struct {
-	Name string `json:"name"`
-}
-
-func TestGetDecodesJSON(t *testing.T) {
+func TestGetReturnsBody(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/cases" {
 			http.Error(w, "unexpected path", http.StatusInternalServerError)
@@ -28,12 +24,12 @@ func TestGetDecodesJSON(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("k", 1, WithHost(srv.URL))
-	var out item
-	if err := c.Get(context.Background(), "/cases", &out); err != nil {
+	body, err := c.Get(context.Background(), "/cases")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Name != "case" {
-		t.Fatalf("name = %q", out.Name)
+	if string(body) != `{"name":"case"}` {
+		t.Fatalf("body = %s", body)
 	}
 }
 
@@ -49,12 +45,12 @@ func TestWithHost(t *testing.T) {
 		t.Fatalf("host = %s", c.host)
 	}
 
-	var out item
-	if err := c.Get(context.Background(), "/cases", &out); err != nil {
+	body, err := c.Get(context.Background(), "/cases")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Name != "remote" {
-		t.Fatalf("name = %q", out.Name)
+	if string(body) != `{"name":"remote"}` {
+		t.Fatalf("body = %s", body)
 	}
 }
 
@@ -67,8 +63,7 @@ func TestEmptyHostRestoresDefault(t *testing.T) {
 
 func TestGetRejectsBadHost(t *testing.T) {
 	c := NewClient("k", 1, WithHost("http://["))
-	var out item
-	err := c.Get(context.Background(), "/cases", &out)
+	_, err := c.Get(context.Background(), "/cases")
 	if err == nil || !strings.Contains(err.Error(), "request:") {
 		t.Fatalf("error = %v", err)
 	}
@@ -85,8 +80,7 @@ func TestWithTimeout(t *testing.T) {
 		t.Fatalf("timeout = %s", c.http.Timeout)
 	}
 
-	var out item
-	err := c.Get(context.Background(), "/cases", &out)
+	_, err := c.Get(context.Background(), "/cases")
 	if err == nil {
 		t.Fatal("expected timeout")
 	}
@@ -101,7 +95,7 @@ func TestWithIdleConns(t *testing.T) {
 	}
 }
 
-func TestGetBadJSON(t *testing.T) {
+func TestGetReturnsNonJSONBody(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		io.WriteString(w, "not-json")
@@ -109,10 +103,12 @@ func TestGetBadJSON(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("k", 1, WithHost(srv.URL))
-	var out item
-	err := c.Get(context.Background(), "/cases", &out)
-	if err == nil || !strings.Contains(err.Error(), "unmarshal") {
-		t.Fatalf("error = %v", err)
+	body, err := c.Get(context.Background(), "/cases")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != "not-json" {
+		t.Fatalf("body = %s", body)
 	}
 }
 
@@ -129,8 +125,7 @@ func TestCanceledContextDoesNotRetry(t *testing.T) {
 	cancel()
 
 	c := NewClient("k", 1, WithHost(srv.URL))
-	var out item
-	err := c.Get(ctx, "/cases", &out)
+	_, err := c.Get(ctx, "/cases")
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("error = %v", err)
 	}

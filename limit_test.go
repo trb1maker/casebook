@@ -18,12 +18,12 @@ func TestLimitZeroUsesDefault(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("k", 1, WithHost(srv.URL), WithLimit(0))
-	var out item
-	if err := c.Get(context.Background(), "/cases", &out); err != nil {
+	body, err := c.Get(context.Background(), "/cases")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Name != "ok" {
-		t.Fatalf("name = %q", out.Name)
+	if string(body) != `{"name":"ok"}` {
+		t.Fatalf("body = %s", body)
 	}
 }
 
@@ -35,14 +35,13 @@ func TestLimitBurstBlocksSecondRequest(t *testing.T) {
 	t.Cleanup(srv.Close)
 
 	c := NewClient("k", 1, WithHost(srv.URL), WithLimit(1))
-	var out item
-	if err := c.Get(context.Background(), "/cases", &out); err != nil {
+	if _, err := c.Get(context.Background(), "/cases"); err != nil {
 		t.Fatal(err)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 	defer cancel()
-	err := c.Get(ctx, "/cases", &out)
+	_, err := c.Get(ctx, "/cases")
 	if err == nil || !strings.Contains(err.Error(), "would exceed context deadline") {
 		t.Fatalf("error = %v", err)
 	}
