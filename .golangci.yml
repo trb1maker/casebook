@@ -1,0 +1,58 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofumpt
+  settings:
+    gofumpt:
+      extra:
+        group-params: true
+        clothe-returns: true
+        balance-calls: true
+
+linters:
+  default: standard
+  enable:
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - contextcheck
+    - copyloopvar
+    - durationcheck
+    - errchkjson
+    - errorlint
+    - fatcontext
+    - forcetypeassert
+    - misspell
+    - mnd
+    - modernize
+    - nilerr
+    - noctx
+    - recvcheck
+    - revive
+    - unparam
+    - usetesting
+    - usestdlibvars
+    - wrapcheck
+  settings:
+    errcheck:
+      exclude-functions:
+        - (io.Closer).Close
+    revive:
+      rules:
+        - name: exported
+          disabled: true
+        - name: package-comments
+          disabled: true
+    wrapcheck:
+      report-internal-errors: false
+  exclusions:
+    rules:
+      - path: '(^|/)(retry|limit)\.go$|_test\.go$'
+        linters:
+          - wrapcheck
+      - path: '_test\.go$'
+        linters:
+          - bodyclose
+          - errcheck
+          - forcetypeassert

@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+vars:
+  GOLANGCI: go tool -modfile=golangci-lint.mod golangci-lint
+
+tasks:
+  lint:
+    desc: Run linting
+    cmd: "{{.GOLANGCI}} run --fix --max-same-issues=0 ./..."
+  
+  fmt:
+    desc: Run formatting
+    cmd: "{{.GOLANGCI}} fmt ./..."
+
+  test:
+    desc: Run tests
+    cmd: "go test ./..."
+  
+  check:
+    desc: Run all checks
+    cmds:
+      - task: fmt
+      - task: lint
+      - task: test
