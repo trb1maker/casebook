@@ -68,3 +68,28 @@ func (c *Client) Get(ctx context.Context, path string) ([]byte, error) {
 
 	return body, nil
 }
+
+func (c *Client) Post(ctx context.Context, path string, buf io.Reader) ([]byte, error) {
+	endpoint, err := url.JoinPath(c.host, path)
+	if err != nil {
+		return nil, fmt.Errorf("request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, buf)
+	if err != nil {
+		return nil, fmt.Errorf("request: %w", err)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("get: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("read body: %w", err)
+	}
+
+	return body, nil
+}
