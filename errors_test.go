@@ -71,7 +71,7 @@ func TestGetWrapsAPIError(t *testing.T) {
 
 	c := NewClient("k", 1, WithHost(srv.URL), WithMaxRetries(1))
 	_, err := c.Get(context.Background(), "/cases")
-	if err == nil || !strings.Contains(err.Error(), "get:") {
+	if err == nil || !strings.Contains(err.Error(), "do:") {
 		t.Fatalf("error = %v", err)
 	}
 

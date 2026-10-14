@@ -12,6 +12,27 @@ import (
 	"time"
 )
 
+func TestGetKeepsQuery(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/arbitrage/dictionaries/judges" || r.URL.RawQuery != "page=1&size=100" {
+			http.Error(w, "unexpected url", http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"items":[]}`)
+	}))
+	t.Cleanup(srv.Close)
+
+	c := NewClient("k", 1, WithHost(srv.URL))
+	body, err := c.Get(context.Background(), "/arbitrage/dictionaries/judges?page=1&size=100")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) != `{"items":[]}` {
+		t.Fatalf("body = %s", body)
+	}
+}
+
 func TestGetReturnsBody(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/cases" {
@@ -64,7 +85,7 @@ func TestEmptyHostRestoresDefault(t *testing.T) {
 func TestGetRejectsBadHost(t *testing.T) {
 	c := NewClient("k", 1, WithHost("http://["))
 	_, err := c.Get(context.Background(), "/cases")
-	if err == nil || !strings.Contains(err.Error(), "request:") {
+	if err == nil || !strings.Contains(err.Error(), "parse path:") {
 		t.Fatalf("error = %v", err)
 	}
 }
